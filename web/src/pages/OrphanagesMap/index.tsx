@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet'
 import { Link } from "react-router-dom";
@@ -8,6 +8,7 @@ import mapMarkerImg from '../../assets/images/map-marker.svg';
 import Map from '../../components/Map';
 
 import './styles.css';
+import api from '../../services/api';
 
 const happyMapIcon = L.icon({
   iconUrl: mapMarkerImg,
@@ -17,7 +18,24 @@ const happyMapIcon = L.icon({
   popupAnchor: [170, 2]
 })
 
+interface Orphanages {
+  id: number;
+  latitude: number;
+  longitude: number;
+  name: string;
+}
+
 export default function OrphanagesMap() {
+
+  const [orphanages, setOrphanages] = useState<Orphanages[]>([]);
+
+  // limita as chamadas de api (quando deve ser executada)
+  useEffect(() => {
+    api.get('orphanages').then(response => {
+      setOrphanages(response.data);
+    });
+  }, []);
+
   return (
 
     <div id="page-map">
@@ -36,14 +54,21 @@ export default function OrphanagesMap() {
       </aside>
 
       <Map>
-        <Marker icon={happyMapIcon} position={[-25.412876,-49.1957942]}>
-          <Popup closeButton={false} minWidth={240} maxWidth={240} className="map-popup">
-            Lar das meninas
-            <Link to={`/orphanages/1`}>
-              <FiArrowRight size={20} color="#fff" />
-            </Link>
-          </Popup>
-        </Marker>
+        {orphanages.map(orphanage => {
+          return (
+            <Marker
+              icon={happyMapIcon}
+              position={[orphanage.latitude, orphanage.longitude]}
+              key={orphanage.id}>
+              <Popup closeButton={false} minWidth={240} maxWidth={240} className="map-popup">
+                {orphanage.name}
+                <Link to={`/orphanages/${orphanage.id}`}>
+                  <FiArrowRight size={20} color="#fff" />
+                </Link>
+              </Popup>
+            </Marker>
+          )
+        })}
       </Map>
 
       <Link to="/orphanages/create" className="create-orphanage">
